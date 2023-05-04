@@ -32,10 +32,8 @@ class Completer(QtWidgets.QCompleter):
         lst = re.split('([ ,][`"])', str(text))
 
         if len(lst) > 1:
-            end_at = -1
-            if lst[-2] in (' `', ' "'):  # dropping the delimiter from list since it is already in path
-                end_at = -2
-            path = '%s %s' % (''.join(lst[:end_at]), path)
+            end_at = -2 if lst[-2] in (' `', ' "') else -1
+            path = f"{''.join(lst[:end_at])} {path}"
 
         return path
 
@@ -45,7 +43,7 @@ class Completer(QtWidgets.QCompleter):
 
         # on values, we split on [space]" or [space]` but need to prepend that in the return
         try:
-            if s_lst[-2] in (' `', ' "') and s_path == "":
+            if s_lst[-2] in (' `', ' "') and not s_path:
                 s_path = s_lst[-2][-1]
         except IndexError:
             pass
@@ -106,7 +104,7 @@ class FilterViewer(QtWidgets.QWidget):
 
     def add_filter(self):
         expr = self.text_input.text()
-        if not expr == "":
+        if expr != "":
             self.text_input.setText("")
             self.pgdf.add_filter(expr=expr)
 
@@ -135,7 +133,7 @@ class FilterViewer(QtWidgets.QWidget):
 
         def data(self, index: QtCore.QModelIndex, role: int):
             row = index.row()
-            if role == Qt.DisplayRole or role == Qt.EditRole:
+            if role in [Qt.DisplayRole, Qt.EditRole]:
                 filt = self.pgdf.filters[row]
                 return filt.expr
 
@@ -144,11 +142,7 @@ class FilterViewer(QtWidgets.QWidget):
                     return None
 
                 filt = self.pgdf.filters[row]
-                if filt.enabled:
-                    return Qt.Checked
-                else:
-                    return Qt.Unchecked
-
+                return Qt.Checked if filt.enabled else Qt.Unchecked
             if role == QtCore.Qt.DecorationRole and self.pgdf.filters[row].failed:
                 path = os.path.join(pandasgui.__path__[0], "resources/images/alert.svg")
                 return QtGui.QIcon(path)

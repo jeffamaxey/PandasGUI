@@ -75,7 +75,7 @@ class FigureViewer(PyQt5.QtWebEngineWidgets.QWebEngineView, PandasGuiStoreItem):
             tmpfile = BytesIO()
             fig.savefig(tmpfile, format='png')
             encoded = base64.b64encode(tmpfile.getvalue()).decode('utf-8')
-            html = '<img src=\'data:image/png;base64,{}\'>'.format(encoded)
+            html = f"<img src=\'data:image/png;base64,{encoded}\'>"
         elif fig_type == "altair":
             fig = fig.properties(
                 width='container',

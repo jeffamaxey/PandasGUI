@@ -116,15 +116,15 @@ class DetachableTabWidget(QtWidgets.QTabWidget):
         # Determine if the given image and the main window icon are the same.
         # If they are, then do not add the icon to the tab
         if tabIconImage == windowIconImage:
-            if insertAt == None:
-                index = self.addTab(contentWidget, name)
-            else:
-                index = self.insertTab(insertAt, contentWidget, name)
+            index = (
+                self.addTab(contentWidget, name)
+                if insertAt is None
+                else self.insertTab(insertAt, contentWidget, name)
+            )
+        elif insertAt is None:
+            index = self.addTab(contentWidget, icon, name)
         else:
-            if insertAt == None:
-                index = self.addTab(contentWidget, icon, name)
-            else:
-                index = self.insertTab(insertAt, contentWidget, icon, name)
+            index = self.insertTab(insertAt, contentWidget, icon, name)
 
         # Make this tab the current tab
         if index > -1:
@@ -184,32 +184,23 @@ class DetachableTabWidget(QtWidgets.QTabWidget):
             self.attachTab(contentWidget, name, icon, index)
 
 
-        # If the drop did not occur on an existing tab, determine if the drop
-        # occurred in the tab bar area (the area to the side of the QTabBar)
         else:
 
             # Find the drop position relative to the DetachableTabWidget
             tabDropPos = self.mapFromGlobal(dropPos)
 
             # If the drop position is inside the DetachableTabWidget...
-            if tabDropPos in self.rect():
-
-                # If the drop position is inside the tab bar area (the
-                # area to the side of the QTabBar) or there are not tabs
-                # currently attached...
-                if tabDropPos.y() < self.tabBar.height() or self.count() == 0:
-                    # Close the detached tab and allow it to re-attach
-                    # automatically
-                    self.detachedTabs[name].close()
+            if tabDropPos in self.rect() and (
+                tabDropPos.y() < self.tabBar.height() or self.count() == 0
+            ):
+                # Close the detached tab and allow it to re-attach
+                # automatically
+                self.detachedTabs[name].close()
 
     ##
     #  Close all tabs that are currently detached.
     def closeDetachedTabs(self):
-        listOfDetachedTabs = []
-
-        for key in self.detachedTabs:
-            listOfDetachedTabs.append(self.detachedTabs[key])
-
+        listOfDetachedTabs = [self.detachedTabs[key] for key in self.detachedTabs]
         for detachedTab in listOfDetachedTabs:
             detachedTab.close()
 

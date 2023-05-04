@@ -139,26 +139,6 @@ class ColumnArranger(ColumnViewer):
     def on_mouseReleaseEvent(self, event):
         # TODO - Add context menu to move columns to front and end
         return
-        if event.button() == Qt.RightButton:
-            pos = event.pos()
-            item = self.tree.itemAt(pos)
-            ix = self.tree.indexAt(pos)
-            ix_list = [self.tree.indexOfTopLevelItem(x) for x in self.tree.selectedItems()]
-            if item:
-                menu = QtWidgets.QMenu(self.tree)
-
-                action1 = QtWidgets.QAction("Move To Front")
-                action1.triggered.connect(lambda: None)
-
-                action2 = QtWidgets.QAction("Move To End")
-                action2.triggered.connect(lambda: None)
-
-                for action in [action1, action2]:
-                    menu.addAction(action)
-
-                menu.exec_(QtGui.QCursor().pos())
-
-        super().mouseReleaseEvent(event)
 
 
 if __name__ == "__main__":

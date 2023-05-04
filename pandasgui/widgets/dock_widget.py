@@ -36,10 +36,7 @@ class DockWidget(QtWidgets.QDockWidget):
 
         for dock_widget in all_dock_widgets:
             sibling_tabs = main.tabifiedDockWidgets(dock_widget)
-            # If you pull a tab out of a group the other tabs still see it as a sibling while dragging...
-            sibling_tabs = [s for s in sibling_tabs if not s.isFloating()]
-
-            if len(sibling_tabs) != 0:
+            if sibling_tabs := [s for s in sibling_tabs if not s.isFloating()]:
                 # Hide title bar
                 dock_widget.setTitleBarWidget(QtWidgets.QWidget())
             else:
@@ -61,7 +58,7 @@ class DockWidget(QtWidgets.QDockWidget):
         dock_widgets = [w for w in dock_widgets if not w.isFloating()]
 
         self.setFloating(False)
-        if len(dock_widgets) > 0:
+        if dock_widgets:
             if self != dock_widgets[0]:
                 main.tabifyDockWidget(dock_widgets[0], self)
             else:

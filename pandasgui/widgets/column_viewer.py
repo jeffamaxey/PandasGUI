@@ -35,7 +35,7 @@ class FlatDraggableTree(base_widgets.QTreeWidget):
 
     def sizeHint(self) -> QtCore.QSize:
         self.header().setStretchLastSection(False)
-        width = 5 + sum([self.columnWidth(i) for i in range(self.columnCount())])
+        width = 5 + sum(self.columnWidth(i) for i in range(self.columnCount()))
         self.header().setStretchLastSection(True)
 
         return QtCore.QSize(width, super().sizeHint().height())

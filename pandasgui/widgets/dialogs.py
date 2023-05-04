@@ -22,8 +22,6 @@ class InputDialog(QtWidgets.QDialog):
         for field_name, field_type in schema.items():
             if field_type == str:
                 widget = QtWidgets.QLineEdit(self)
-            if field_type == bool:
-                pass  # TODO
             self.fields.append(widget)
             layout.addRow(field_name, self.first)
 

@@ -386,15 +386,18 @@ class FuncUi(QtWidgets.QWidget):
                     val = arg.default_value
 
                 # Logic to show value in widget and support converting from ColumnListArg to ColumnArg
-                if val is None:
+                if (
+                    val is not None
+                    and type(val) != str
+                    and type(val) == list
+                    and len(val) == 0
+                    or val is None
+                ):
                     val_repr = ''
+                elif type(val) != str and type(val) == list:
+                    val_repr = val[0]
                 elif type(val) == str:
                     val_repr = val
-                elif type(val) == list:
-                    if len(val) == 0:
-                        val_repr = ''
-                    else:
-                        val_repr = val[0]
                 else:
                     raise ValueError
 
@@ -490,17 +493,14 @@ class FuncUi(QtWidgets.QWidget):
                 elif arg.arg_name in asdict(SETTINGS_STORE).keys():
                     val = SETTINGS_STORE[arg.arg_name].value
                 else:
-                    if arg.default_value is None:
-                        val = other_names[0]
-                    else:
-                        val = arg.default_value
+                    val = other_names[0] if arg.default_value is None else arg.default_value
                 ix = other_names.index(val)
                 combo_box.setCurrentIndex(ix)
                 combo_box.currentIndexChanged.emit(ix)  # Need this incase value was same
 
         self.valuesChanged.emit()
 
-        if any([type(arg) == OtherDataFrameArg for arg in schema.args]):
+        if any(type(arg) == OtherDataFrameArg for arg in schema.args):
             self.source_tree2.show()
         else:
             self.source_tree2.hide()
@@ -576,7 +576,7 @@ class ColumnListDropZone(QtWidgets.QListWidget):
 
     def sizeHint(self):
         width = super().sizeHint().width()
-        height = sum([self.sizeHintForRow(i) for i in range(self.count())]) + 5
+        height = sum(self.sizeHintForRow(i) for i in range(self.count())) + 5
         if self.count() == 0:
             height += 30
         elif self.count() == 1:
@@ -647,7 +647,7 @@ def decode_data(bytearray):
         column = ds.readInt32()
 
         map_items = ds.readInt32()
-        for i in range(map_items):
+        for _ in range(map_items):
             key = ds.readInt32()
 
             value = QtCore.QVariant()

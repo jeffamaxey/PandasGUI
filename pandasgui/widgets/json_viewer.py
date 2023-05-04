@@ -135,14 +135,12 @@ class JsonViewer(QtWidgets.QWidget, PandasGuiStoreItem):
             raise ValueError(f"Expected dict or list, instead got {type(jdata)}")
 
         for key, val in items:
-            text_list = []
+            text_list = [key]
 
-            if isinstance(val, dict) or isinstance(val, list):
-                text_list.append(key)
+            if isinstance(val, (dict, list)):
                 row_item = QtWidgets.QTreeWidgetItem([key])
                 self.recurse_jdata(val, row_item)
             else:
-                text_list.append(key)
                 text_list.append(str(val))
                 row_item = QtWidgets.QTreeWidgetItem([key, str(val)])
 
@@ -152,7 +150,7 @@ class JsonViewer(QtWidgets.QWidget, PandasGuiStoreItem):
         return self
 
 
-if "__main__" == __name__:
+if __name__ == "__main__":
     app = QtWidgets.QApplication([])
 
     data = {

@@ -107,10 +107,11 @@ class PythonHighlighter(QSyntaxHighlighter):
         # Keyword, operator, and brace rules
         rules += [(r'\b%s\b' % w, 0, self.STYLES['keyword'])
                   for w in PythonHighlighter.keywords]
-        rules += [(r'%s' % o, 0, self.STYLES['operator'])
-                  for o in PythonHighlighter.operators]
-        rules += [(r'%s' % b, 0, self.STYLES['brace'])
-                  for b in PythonHighlighter.braces]
+        rules += [
+            (f'{o}', 0, self.STYLES['operator'])
+            for o in PythonHighlighter.operators
+        ]
+        rules += [(f'{b}', 0, self.STYLES['brace']) for b in PythonHighlighter.braces]
 
         # All other rules
         rules += [
@@ -196,10 +197,7 @@ class PythonHighlighter(QSyntaxHighlighter):
             start = delimiter.indexIn(text, start + length)
 
         # Return True if still inside a multi-line string, False otherwise
-        if self.currentBlockState() == in_state:
-            return True
-        else:
-            return False
+        return self.currentBlockState() == in_state
 
 if __name__=='__main__':
     import pathlib

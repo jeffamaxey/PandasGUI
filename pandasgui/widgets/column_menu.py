@@ -135,7 +135,7 @@ class ColumnMenu(QtWidgets.QMenu):
         widget.setMouseTracking(True)
 
         custom_action = QtWidgets.QWidgetAction(self)
-        widget.setStyleSheet(widget.styleSheet() + "margin: 5px;")
+        widget.setStyleSheet(f"{widget.styleSheet()}margin: 5px;")
         custom_action.setDefaultWidget(widget)
         self.addAction(custom_action)
 

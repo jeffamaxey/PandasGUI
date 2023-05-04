@@ -66,25 +66,23 @@ def as_dict(obj, recurse_list=None):
         recurse_list = []
     if id(obj) in recurse_list:
         return "*loop detected*"
-    else:
-        recurse_list.append(id(obj))
-        result = {}
-        for key, val in obj.__dict__.items():
+    recurse_list.append(id(obj))
+    result = {}
+    for key, val in obj.__dict__.items():
 
-            if key.startswith("_"):
-                continue
+        if key.startswith("_"):
+            continue
 
-            if isinstance(val, list):
-                if len(val) == 0:
-                    element = str(val)
-                else:
-                    element = []
-                    for item in val:
-                        element.append(as_dict(item, recurse_list=recurse_list))
-            else:
-                element = as_dict(val, recurse_list=recurse_list)
-            result[key] = element
-        return result
+        if isinstance(val, list):
+            element = (
+                str(val)
+                if len(val) == 0
+                else [as_dict(item, recurse_list=recurse_list) for item in val]
+            )
+        else:
+            element = as_dict(val, recurse_list=recurse_list)
+        result[key] = element
+    return result
 
 
 # https://stackoverflow.com/a/47275100/3620725
@@ -125,7 +123,7 @@ def flatten_multiindex(mi, sep=" - ", format=None):
 
     if issubclass(type(mi), pd.core.indexes.multi.MultiIndex):
         # Flatten multi-index headers
-        if format == None:
+        if format is None:
             # Flatten by putting sep between each header value
             flat_index = [sep.join([str(x) for x in tup]).strip(sep)
                           for tup in mi.values]
@@ -142,7 +140,7 @@ def flatten_multiindex(mi, sep=" - ", format=None):
                     placeholders.append(name)
 
                 # Check if index segment contains each placeholder
-                if all([item != "" for item in tuple]):
+                if all(item != "" for item in tuple):
                     # Replace placeholders in format with corresponding values
                     flat_name = format
                     for i, val in enumerate(tuple):  # Iterates over the values in this index segment
@@ -207,14 +205,13 @@ def clear_layout(layout):
 
 
 def unique_name(name, existing_names):
-    if name in existing_names:
-        for i in range(2, 999):
-            new_name = f"{name} ({i})"
-            if new_name not in existing_names:
-                return new_name
-        raise ValueError("Stopped generating unique name after 1000 attempts")
-    else:
+    if name not in existing_names:
         return name
+    for i in range(2, 999):
+        new_name = f"{name} ({i})"
+        if new_name not in existing_names:
+            return new_name
+    raise ValueError("Stopped generating unique name after 1000 attempts")
 
 
 # Take a df and rename duplicate columns by appending number suffixes
@@ -268,12 +265,9 @@ def parse_all_dates(df: Union[pd.DataFrame, pd.Series]):
     # Try to parse all string columns as dates
     if type(df) == pd.DataFrame:
         def parse_dates_if_str(col: pd.Series):
-            if (col.dtype == object or col.dtype == pd.StringDtype):
+            if col.dtype in [object, pd.StringDtype]:
                 # Edge case where pd.to_datetime will work but we don't want it to
-                if all(col.isna()):
-                    return col
-                else:
-                    return parse_date(col)
+                return col if all(col.isna()) else parse_date(col)
             else:
                 return col
 
@@ -288,14 +282,14 @@ def clean_dataframe(df, name="DataFrame"):
     if issubclass(type(df.columns), pd.core.indexes.multi.MultiIndex):
         levels = df.columns.levels
         for level in levels:
-            if any([type(val) != str for val in level]):
+            if any(type(val) != str for val in level):
                 logger.warning(f"In {name}, converted MultiIndex level values to string in: {str(level)}")
                 df.columns = df.columns.set_levels([[str(val) for val in level] for level in levels])
                 converted_names.append(str(level))
         if converted_names:
             logger.warning(f"In {name}, converted MultiIndex level names to string: {', '.join(converted_names)}")
     else:
-        for i, col in enumerate(df.columns):
+        for col in df.columns:
             if type(col) != str:
                 df.rename(columns={col: str(col)}, inplace=True)
                 converted_names.append(str(col))
@@ -327,11 +321,7 @@ def resize_widget(widget, x, y):
 def get_kwargs():
     frame = inspect.currentframe().f_back
     keys, _, _, values = inspect.getargvalues(frame)
-    kwargs = {}
-    for key in keys:
-        if key != 'self':
-            kwargs[key] = values[key]
-    return kwargs
+    return {key: values[key] for key in keys if key != 'self'}
 
 
 # Flatten nested iterables
@@ -417,9 +407,8 @@ def refactor_variable(expr, old_name, new_name):
 
     tree = ast.parse(expr)
     for node in ast.walk(tree):
-        if isinstance(node, ast.Name):
-            if node.id == old_name:
-                node.id = new_name
+        if isinstance(node, ast.Name) and node.id == old_name:
+            node.id = new_name
 
     return astor.code_gen.to_source(tree)
 
@@ -470,8 +459,9 @@ def parse_cell(text, column_dtype):
     try:
         from io import StringIO
         import pandas as pd
-        value = pd.read_csv(StringIO(text), dtype=column_dtype, header=None).values[0][0]
-        return value
+        return pd.read_csv(
+            StringIO(text), dtype=column_dtype, header=None
+        ).values[0][0]
     except ValueError:
         raise ValueError(f"Could not convert {repr(text)} to type {column_dtype}")
 
@@ -508,7 +498,7 @@ def summarize_json(data, terse=True):
 
     summary = ""
 
-    width = max([len(str(count)) for count in keycount.values()])
+    width = max(len(str(count)) for count in keycount.values())
     redundant_subkeys = set()
     for key, count in keycount.items():
         if terse:

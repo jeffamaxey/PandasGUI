@@ -42,7 +42,7 @@ class FindToolbar(QtWidgets.QToolBar):
         # add match modification
 
         # add match case button
-        match_case_icon_raw_path = self.image_folder + "/case-sensitive.svg"
+        match_case_icon_raw_path = f"{self.image_folder}/case-sensitive.svg"
         match_case_icon_path = pkg_resources.resource_filename(
             __name__, match_case_icon_raw_path
         )
@@ -56,7 +56,7 @@ class FindToolbar(QtWidgets.QToolBar):
         self.find_textbox.add_button(self.match_case_button)
 
         # add match regex button
-        regex_icon_raw_path = self.image_folder + "/regex.svg"
+        regex_icon_raw_path = f"{self.image_folder}/regex.svg"
         regex_icon_path = pkg_resources.resource_filename(__name__, regex_icon_raw_path)
         regex_icon = QtGui.QIcon(regex_icon_path)
         self.match_regex_button = QtWidgets.QToolButton(self.find_textbox)
@@ -68,7 +68,7 @@ class FindToolbar(QtWidgets.QToolBar):
         self.find_textbox.add_button(self.match_regex_button)
 
         # add match exactly button
-        match_exactly_icon_raw_path = self.image_folder + "/match-exactly.svg"
+        match_exactly_icon_raw_path = f"{self.image_folder}/match-exactly.svg"
         match_exactly_icon_path = pkg_resources.resource_filename(
             __name__, match_exactly_icon_raw_path
         )
@@ -91,7 +91,7 @@ class FindToolbar(QtWidgets.QToolBar):
 
         # go to next match
         previous_match_button = QtWidgets.QPushButton()
-        up_arrow_icon_raw_path = self.image_folder + "/arrow-up.svg"
+        up_arrow_icon_raw_path = f"{self.image_folder}/arrow-up.svg"
         up_arrow_icon_path = pkg_resources.resource_filename(
             __name__, up_arrow_icon_raw_path)
         up_arrow_icon = QtGui.QIcon(up_arrow_icon_path)
@@ -102,7 +102,7 @@ class FindToolbar(QtWidgets.QToolBar):
 
         # go to previous match
         next_match_button = QtWidgets.QPushButton()
-        down_arrow_icon_raw_path = self.image_folder + "/arrow-down.svg"
+        down_arrow_icon_raw_path = f"{self.image_folder}/arrow-down.svg"
         down_arrow_icon_path = pkg_resources.resource_filename(
             __name__, down_arrow_icon_raw_path
         )
@@ -114,7 +114,7 @@ class FindToolbar(QtWidgets.QToolBar):
 
         # close find toolbar
         close_find_button = QtWidgets.QPushButton()
-        cancel_icon_raw_path = self.image_folder + "/close.svg"
+        cancel_icon_raw_path = f"{self.image_folder}/close.svg"
         cancel_icon_path = pkg_resources.resource_filename(
             __name__, cancel_icon_raw_path
         )
@@ -176,7 +176,7 @@ class FindToolbar(QtWidgets.QToolBar):
         match_idxs = [current_model.index(row, col) for row, col in cells_matched]
         self.search_matches.extend(match_idxs)
 
-        matches_found_text = "Matches Found: " + str(len(self.search_matches))
+        matches_found_text = f"Matches Found: {len(self.search_matches)}"
         self.matches_found_label.setText(matches_found_text)
 
         if self.search_matches and self.search_selection is None:
@@ -186,41 +186,42 @@ class FindToolbar(QtWidgets.QToolBar):
 
     @QtCore.pyqtSlot()
     def show_find_bar(self):
-        if self.height() == 0:
-            animation_duration = 200
-            full_toolbar_height = 30
+        if self.height() != 0:
+            return
+        animation_duration = 200
+        showAnimation = QtCore.QVariantAnimation(self)
+        showAnimation.setEasingCurve(QtCore.QEasingCurve.InOutQuad)
+        showAnimation.setDuration(animation_duration)
+        showAnimation.setStartValue(0)
+        full_toolbar_height = 30
+        showAnimation.setEndValue(full_toolbar_height)
+        showAnimation.valueChanged.connect(lambda val: self.setFixedHeight(val))
 
-            showAnimation = QtCore.QVariantAnimation(self)
-            showAnimation.setEasingCurve(QtCore.QEasingCurve.InOutQuad)
-            showAnimation.setDuration(animation_duration)
-            showAnimation.setStartValue(0)
-            showAnimation.setEndValue(full_toolbar_height)
-            showAnimation.valueChanged.connect(lambda val: self.setFixedHeight(val))
+        showAnimation.start()
 
-            showAnimation.start()
-
-            # clear the last search, and set cursor on the QLineEdit
-            self.find_textbox.setText("")
-            self.find_textbox.setFocus()
+        # clear the last search, and set cursor on the QLineEdit
+        self.find_textbox.setText("")
+        self.find_textbox.setFocus()
 
     @QtCore.pyqtSlot()
     def hide_find_bar(self):
-        if self.height() == 30:
-            animation_duration = 200
-            full_toolbar_height = 30
+        if self.height() != 30:
+            return
+        full_toolbar_height = 30
 
-            hideAnimation = QtCore.QVariantAnimation(self)
-            hideAnimation.setEasingCurve(QtCore.QEasingCurve.InOutQuad)
-            hideAnimation.setDuration(animation_duration)
-            hideAnimation.setStartValue(full_toolbar_height)
-            hideAnimation.setEndValue(0)
-            hideAnimation.valueChanged.connect(lambda val: self.setFixedHeight(val))
+        hideAnimation = QtCore.QVariantAnimation(self)
+        hideAnimation.setEasingCurve(QtCore.QEasingCurve.InOutQuad)
+        animation_duration = 200
+        hideAnimation.setDuration(animation_duration)
+        hideAnimation.setStartValue(full_toolbar_height)
+        hideAnimation.setEndValue(0)
+        hideAnimation.valueChanged.connect(lambda val: self.setFixedHeight(val))
 
-            hideAnimation.start()
+        hideAnimation.start()
 
-            # stop any running findThread
-            if self.findThread:
-                self.findThread.stop()
+        # stop any running findThread
+        if self.findThread:
+            self.findThread.stop()
 
     @QtCore.pyqtSlot()
     def select_next_match(self):
@@ -324,11 +325,11 @@ class ButtonLineEdit(QtWidgets.QLineEdit):
         self.buttons.append(button)
 
         # makes sure text doesn't type behind the buttons
-        totalWidth = sum([b.sizeHint().width() for b in self.buttons])
+        totalWidth = sum(b.sizeHint().width() for b in self.buttons)
         frameWidth = self.style().pixelMetric(QtWidgets.QStyle.PM_DefaultFrameWidth)
 
         # makes sure the typing area doesn't get too small if toolbar is shrunk.
-        maxHeight = max([b.sizeHint().height() for b in self.buttons])
+        maxHeight = max(b.sizeHint().height() for b in self.buttons)
         self.setMinimumSize(
             max(self.minimumSizeHint().width(), totalWidth + frameWidth * 2 + 2),
             max(self.minimumSizeHint().height(), maxHeight + frameWidth * 2 + 2),
@@ -366,7 +367,7 @@ class FindThread(QtCore.QThread):
             chunks: List of pd.Series.
         """
         chunks = []
-        for col_idx, col_name in enumerate(self.df.columns):
+        for col_name in self.df.columns:
             column = self.df[col_name].copy()
             while len(column) > 0:
                 chunk = column.iloc[: self.max_chunk_size]
@@ -382,21 +383,17 @@ class FindThread(QtCore.QThread):
             chunk: Type pd.Series
         """
         if self.match_flags["whole word"]:
-            if self.match_flags["case"]:
-                rows_with_match = chunk[chunk.astype(str) == self.text]
-            else:
-                rows_with_match = chunk[
-                    chunk.astype(str).str.lower() == self.text.lower()
-                    ]
-        else:
-            pd_match_flags = self.match_flags.copy()
-            pd_match_flags.pop("whole word")
-            check_for_match = chunk.astype(str).str.contains(
-                self.text, **pd_match_flags
+            return (
+                chunk[chunk.astype(str) == self.text]
+                if self.match_flags["case"]
+                else chunk[chunk.astype(str).str.lower() == self.text.lower()]
             )
-            rows_with_match = chunk[check_for_match]
-
-        return rows_with_match
+        pd_match_flags = self.match_flags.copy()
+        pd_match_flags.pop("whole word")
+        check_for_match = chunk.astype(str).str.contains(
+            self.text, **pd_match_flags
+        )
+        return chunk[check_for_match]
 
     def run(self):
         col_idx = 0

@@ -137,8 +137,6 @@ class Navigator(FlatDraggableTree):
                         import json
                         with open(path, 'w') as f:
                             json.dump(item.jdata, f)
-                    else:
-                        pass
 
             mime.add_callback(write_to_file)
             path_list.append(QtCore.QUrl.fromLocalFile(path))

@@ -39,16 +39,16 @@ def histogram(data_frame: DataFrame,
               marginal: Literal[None, 'rug', 'box', 'violin'] = None,
               cumulative: bool = False,
               **kwargs) -> Figure:
-    fig = px.histogram(data_frame=data_frame,
-                       x=x,
-                       color=color,
-                       facet_row=facet_row,
-                       facet_col=facet_col,
-                       marginal=marginal,
-                       cumulative=cumulative,
-                       **kwargs)
-
-    return fig
+    return px.histogram(
+        data_frame=data_frame,
+        x=x,
+        color=color,
+        facet_row=facet_row,
+        facet_col=facet_col,
+        marginal=marginal,
+        cumulative=cumulative,
+        **kwargs
+    )
 
 
 def scatter(data_frame: DataFrame,
@@ -137,15 +137,15 @@ def bar(data_frame: DataFrame,
             # Only need to sort here because aggregation already sorts
             data_frame = data_frame.sort_values(key_cols)
 
-    fig = px.bar(data_frame=data_frame,
-                 x=x,
-                 y=y,
-                 color=color,
-                 facet_row=facet_row,
-                 facet_col=facet_col,
-                 **kwargs)
-
-    return fig
+    return px.bar(
+        data_frame=data_frame,
+        x=x,
+        y=y,
+        color=color,
+        facet_row=facet_row,
+        facet_col=facet_col,
+        **kwargs
+    )
 
 
 def box(data_frame: DataFrame,
@@ -155,16 +155,15 @@ def box(data_frame: DataFrame,
         facet_row: ColumnName = None,
         facet_col: ColumnName = None,
         **kwargs) -> Figure:
-    fig = px.box(data_frame=data_frame,
-                 x=x,
-                 y=y,
-                 color=color,
-                 facet_row=facet_row,
-                 facet_col=facet_col,
-
-                 **kwargs)
-
-    return fig
+    return px.box(
+        data_frame=data_frame,
+        x=x,
+        y=y,
+        color=color,
+        facet_row=facet_row,
+        facet_col=facet_col,
+        **kwargs
+    )
 
 
 def violin(data_frame: DataFrame,
@@ -174,16 +173,15 @@ def violin(data_frame: DataFrame,
            facet_row: ColumnName = None,
            facet_col: ColumnName = None,
            **kwargs) -> Figure:
-    fig = px.violin(data_frame=data_frame,
-                    x=x,
-                    y=y,
-                    color=color,
-                    facet_row=facet_row,
-                    facet_col=facet_col,
-
-                    **kwargs)
-
-    return fig
+    return px.violin(
+        data_frame=data_frame,
+        x=x,
+        y=y,
+        color=color,
+        facet_row=facet_row,
+        facet_col=facet_col,
+        **kwargs
+    )
 
 
 def density_heatmap(data_frame: DataFrame,
@@ -193,16 +191,15 @@ def density_heatmap(data_frame: DataFrame,
                     facet_row: ColumnName = None,
                     facet_col: ColumnName = None,
                     **kwargs) -> Figure:
-    fig = px.density_heatmap(data_frame=data_frame,
-                             x=x,
-                             y=y,
-                             z=z,
-                             facet_row=facet_row,
-                             facet_col=facet_col,
-
-                             **kwargs)
-
-    return fig
+    return px.density_heatmap(
+        data_frame=data_frame,
+        x=x,
+        y=y,
+        z=z,
+        facet_row=facet_row,
+        facet_col=facet_col,
+        **kwargs
+    )
 
 
 def density_contour(data_frame: DataFrame,
@@ -236,26 +233,22 @@ def pie(data_frame: DataFrame,
     if facet_row is not None or facet_col is not None:
         raise NotImplementedError
 
-    fig = px.pie(data_frame=data_frame,
-                 names=names,
-                 values=values,
-                 color=color,
-                 **kwargs)
-
-    return fig
+    return px.pie(
+        data_frame=data_frame,
+        names=names,
+        values=values,
+        color=color,
+        **kwargs
+    )
 
 
 def scatter_matrix(data_frame: DataFrame,
                    dimensions: ColumnNameList = None,
                    color: ColumnName = None,
                    **kwargs) -> Figure:
-    fig = px.scatter_matrix(data_frame=data_frame,
-                            dimensions=dimensions,
-                            color=color,
-
-                            **kwargs)
-
-    return fig
+    return px.scatter_matrix(
+        data_frame=data_frame, dimensions=dimensions, color=color, **kwargs
+    )
 
 
 def scatter_3d(data_frame: DataFrame,
@@ -264,14 +257,9 @@ def scatter_3d(data_frame: DataFrame,
                z: ColumnName = None,
                color: ColumnName = None,
                **kwargs) -> Figure:
-    fig = px.scatter_3d(data_frame=data_frame,
-                        x=x,
-                        y=y,
-                        z=z,
-                        color=color,
-                        **kwargs)
-
-    return fig
+    return px.scatter_3d(
+        data_frame=data_frame, x=x, y=y, z=z, color=color, **kwargs
+    )
 
 
 def candlestick(data_frame: DataFrame,
@@ -281,14 +269,17 @@ def candlestick(data_frame: DataFrame,
                 low: ColumnName = None,
                 close: ColumnName = None,
                 **kwargs) -> Figure:
-    fig = go.Figure(data=[go.Candlestick(x=data_frame[x],
-                                         open=data_frame[open],
-                                         high=data_frame[high],
-                                         low=data_frame[low],
-                                         close=data_frame[close],
-                                         )])
-
-    return fig
+    return go.Figure(
+        data=[
+            go.Candlestick(
+                x=data_frame[x],
+                open=data_frame[open],
+                high=data_frame[high],
+                low=data_frame[low],
+                close=data_frame[close],
+            )
+        ]
+    )
 
 
 def word_cloud(data_frame: DataFrame,
@@ -302,9 +293,7 @@ def word_cloud(data_frame: DataFrame,
         words = [words]
     text = ' '.join(pd.concat([data_frame[x].dropna().astype(str) for x in words]))
     wc = WordCloud(scale=2, collocations=False).generate(text)
-    fig = px.imshow(wc)
-
-    return fig
+    return px.imshow(wc)
 
 
 # ============================================================================ #
@@ -325,11 +314,9 @@ def pivot(data_frame: DataFrame,
                            'sum',
                            'nunique'] = 'mean'
           ):
-    df = data_frame.pivot_table(index=index,
-                                columns=columns,
-                                values=values,
-                                aggfunc=aggfunc)
-    return df
+    return data_frame.pivot_table(
+        index=index, columns=columns, values=values, aggfunc=aggfunc
+    )
 
 
 def melt(df: DataFrame,
@@ -349,22 +336,20 @@ def merge(data_frame: DataFrame,
 
           validate: Literal['one_to_one', 'one_to_many', 'many_to_one', 'many_to_many'] = None,
           ):
-    df = data_frame.merge(right=other_dataframe,
-                          how=how,
-                          left_on=left_on,
-                          right_on=right_on,
-                          validate=validate, )
-    return df
+    return data_frame.merge(
+        right=other_dataframe,
+        how=how,
+        left_on=left_on,
+        right_on=right_on,
+        validate=validate,
+    )
 
 
 def concat(data_frame: DataFrame,
            other_dataframe: OtherDataFrame,
            axis: Literal['0 (rows)', '1 (columns)'] = '0 (rows)',
            ):
-    df = pd.concat([data_frame, other_dataframe],
-                   axis=int(axis[0])
-                   )
-    return df
+    return pd.concat([data_frame, other_dataframe], axis=int(axis[0]))
 
 
 # ============================================================================ #
@@ -395,12 +380,13 @@ def generate_title(pgdf: PandasGuiDataFrameStore, chart_type, kwargs):
 
     def remove_units(label):
         "we do not want to repeat units in the title. It is assumed they are in parenthesis"
-        if type(label) == list and len(label) == 0:
-            return label
-        elif type(label) == list and len(label) == 1:
-            return remove_units(label[0])
-        elif type(label) == list and len(label) > 1:
-            return [remove_units(val) for val in label]
+        if type(label) == list:
+            if len(label) == 0:
+                return label
+            elif len(label) == 1:
+                return remove_units(label[0])
+            elif len(label) > 1:
+                return [remove_units(val) for val in label]
         try:
             return label[:label.rindex("(")] if label[-1] == ")" else label
         except (AttributeError, IndexError, TypeError, ValueError):
@@ -492,10 +478,7 @@ def generate_title(pgdf: PandasGuiDataFrameStore, chart_type, kwargs):
             if color is None and aggregation:
                 over_by = " of "
         else:
-            if aggregation:
-                func = "average"
-            else:
-                func = "sum"
+            func = "average" if aggregation else "sum"
             y = f"{func} of {y}"
     elif chart_type == "density_heatmap":
         histfunc = kwargs.get("histfunc", "sum")
@@ -532,7 +515,7 @@ def generate_title(pgdf: PandasGuiDataFrameStore, chart_type, kwargs):
     # filters
     filters = ','.join([filter.expr for filter in pgdf_filters if filter.enabled and filter.failed == False])
     if filters != "":
-        filters = "Filters: " + filters
+        filters = f"Filters: {filters}"
     total = df_unfiltered.shape[0]
 
     subset = df.shape[0]
@@ -599,8 +582,5 @@ def generate_title(pgdf: PandasGuiDataFrameStore, chart_type, kwargs):
                                selection=selection,
                                groupings=groupings,
                                **kwargs))
-    if title:
-        title = title.replace("{title}", title_rendered)  # to include auto title in custom kwargs title
-    else:
-        title = title_rendered
+    title = title.replace("{title}", title_rendered) if title else title_rendered
     return title

@@ -32,10 +32,9 @@ class TypePicker(QtWidgets.QListWidget):
         self.setUniformItemSizes(True)
         if self.orientation == Qt.Vertical:
             self.setFlow(QtWidgets.QListView.TopToBottom)
-            self.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         else:
             self.setFlow(QtWidgets.QListView.LeftToRight)
-            self.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         self.setIconSize(QtCore.QSize(50, 50))
 
     def viewOptions(self) -> 'QStyleOptionViewItem':
@@ -51,14 +50,14 @@ class TypePicker(QtWidgets.QListWidget):
                 width += self.verticalScrollBar().sizeHint().width()
             height = super().sizeHint().height()
 
-            return QtCore.QSize(width, height)
         else:
             height = self.sizeHintForRow(0) + 5
             if not self.horizontalScrollBar().visibleRegion().isEmpty():
                 height += self.horizontalScrollBar().sizeHint().height()
             width = super().sizeHint().width()
 
-            return QtCore.QSize(width, height)
+
+        return QtCore.QSize(width, height)
 
     def resizeEvent(self, e: QtGui.QResizeEvent) -> None:
         if self.orientation == Qt.Vertical:

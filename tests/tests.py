@@ -6,7 +6,11 @@ from PyQt5 import QtCore, QtWidgets
 
 
 def generate_string_data(rows, cols, length=5):
-    return pd.DataFrame(np.array([pd.util.testing.rands_array(length, cols) for x in range(rows)]))
+    return pd.DataFrame(
+        np.array(
+            [pd.util.testing.rands_array(length, cols) for _ in range(rows)]
+        )
+    )
 
 
 def generate_int_data(rows, cols):

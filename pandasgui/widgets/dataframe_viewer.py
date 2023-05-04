@@ -377,9 +377,11 @@ class DataTableModel(QtCore.QAbstractTableModel):
         col = index.column()
         cell = self.pgdf.df.iloc[row, col]
 
-        if (role == QtCore.Qt.DisplayRole
-                or role == QtCore.Qt.EditRole
-                or role == QtCore.Qt.ToolTipRole):
+        if role in [
+            QtCore.Qt.DisplayRole,
+            QtCore.Qt.EditRole,
+            QtCore.Qt.ToolTipRole,
+        ]:
             # Need to check type since a cell might contain a list or Series, then .isna returns a Series not a bool
             cell_is_na = pd.isna(cell)
             if type(cell_is_na) == bool and cell_is_na:
@@ -391,20 +393,19 @@ class DataTableModel(QtCore.QAbstractTableModel):
                     return "NaN"
 
             # Float formatting
-            if isinstance(cell, (float, np.floating)):
-                if role == QtCore.Qt.DisplayRole:
-                    return str(round(cell, 3))
+            if (
+                isinstance(cell, (float, np.floating))
+                and role == QtCore.Qt.DisplayRole
+            ):
+                return str(round(cell, 3))
 
-            return str(cell)
-
-        elif role == QtCore.Qt.ToolTipRole:
             return str(cell)
 
         elif role == QtCore.Qt.BackgroundRole:
 
             color_mode = self.dataframe_viewer.color_mode
 
-            if color_mode == None or pd.isna(cell):
+            if color_mode is None or pd.isna(cell):
                 return None
 
             try:
@@ -415,10 +416,10 @@ class DataTableModel(QtCore.QAbstractTableModel):
 
             if color_mode == 'all':
                 percentile = cell / self.pgdf.column_statistics['Max'].max()
-            elif color_mode == 'row':
-                percentile = cell / self.pgdf.row_statistics['Max'][row]
             elif color_mode == 'column':
                 percentile = cell / self.pgdf.column_statistics['Max'][col]
+            elif color_mode == 'row':
+                percentile = cell / self.pgdf.row_statistics['Max'][row]
             else:
                 raise ValueError
 
@@ -541,7 +542,7 @@ class HeaderModel(QtCore.QAbstractTableModel):
         row = index.row()
         col = index.column()
 
-        if role == QtCore.Qt.DisplayRole or role == QtCore.Qt.ToolTipRole:
+        if role in [QtCore.Qt.DisplayRole, QtCore.Qt.ToolTipRole]:
 
             if self.orientation == Qt.Horizontal:
 
@@ -708,25 +709,6 @@ class HeaderView(QtWidgets.QTableView):
         # Disabling this to allow selecting specific cells in headers
         return
 
-        if self.orientation == Qt.Horizontal:
-            if self.pgdf.df.columns.nlevels == 1:
-                return
-        else:
-            if self.pgdf.df.index.nlevels == 1:
-                return
-
-        for ix in self.selectedIndexes():
-            if self.orientation == Qt.Horizontal:
-                # Loop over the rows above this one
-                for row in range(ix.row()):
-                    ix2 = self.model().index(row, ix.column())
-                    self.setSelection(self.visualRect(ix2), QtCore.QItemSelectionModel.Select)
-            else:
-                # Loop over the columns left of this one
-                for col in range(ix.column()):
-                    ix2 = self.model().index(ix.row(), col)
-                    self.setSelection(self.visualRect(ix2), QtCore.QItemSelectionModel.Select)
-
     # This sets spans to group together adjacent cells with the same values
     def set_spans(self):
 
@@ -736,11 +718,7 @@ class HeaderView(QtWidgets.QTableView):
         if self.orientation == Qt.Horizontal:
 
             # Find how many levels the MultiIndex has
-            if isinstance(df.columns, pd.MultiIndex):
-                N = len(df.columns[0])
-            else:
-                N = 1
-
+            N = len(df.columns[0]) if isinstance(df.columns, pd.MultiIndex) else 1
             for level in range(N):  # Iterates over the levels
                 # Find how many segments the MultiIndex has
                 if isinstance(df.columns, pd.MultiIndex):
@@ -762,21 +740,15 @@ class HeaderView(QtWidgets.QTableView):
                             match_end = col
                             span_size = match_end - match_start + 1
                             self.setSpan(level, match_start, 1, span_size)
-                    else:
-                        if match_start is not None:
-                            match_end = col - 1
-                            span_size = match_end - match_start + 1
-                            self.setSpan(level, match_start, 1, span_size)
-                            match_start = None
+                    elif match_start is not None:
+                        match_end = col - 1
+                        span_size = match_end - match_start + 1
+                        self.setSpan(level, match_start, 1, span_size)
+                        match_start = None
 
-        # Find spans for vertical HeaderView
         else:
             # Find how many levels the MultiIndex has
-            if isinstance(df.index, pd.MultiIndex):
-                N = len(df.index[0])
-            else:
-                N = 1
-
+            N = len(df.index[0]) if isinstance(df.index, pd.MultiIndex) else 1
             for level in range(N):  # Iterates over the levels
 
                 # Find how many segments the MultiIndex has
@@ -800,12 +772,11 @@ class HeaderView(QtWidgets.QTableView):
                             match_end = row
                             span_size = match_end - match_start + 1
                             self.setSpan(match_start, level, span_size, 1)
-                    else:
-                        if match_start is not None:
-                            match_end = row - 1
-                            span_size = match_end - match_start + 1
-                            self.setSpan(match_start, level, span_size, 1)
-                            match_start = None
+                    elif match_start is not None:
+                        match_end = row - 1
+                        span_size = match_end - match_start + 1
+                        self.setSpan(match_start, level, span_size, 1)
+                        match_start = None
 
     def eventFilter(self, object: QtCore.QObject, event: QtCore.QEvent):
         if event.type() in [QtCore.QEvent.MouseButtonPress,
@@ -828,23 +799,14 @@ class HeaderView(QtWidgets.QTableView):
             if self.orientation == Qt.Horizontal:
                 x = mouse_position
                 if self.columnAt(x - margin) != self.columnAt(x + margin):
-                    if self.columnAt(x + margin) == 0:
-                        # We're at the left edge of the first column
-                        return None
-                    else:
-                        return self.columnAt(x - margin)
+                    return None if self.columnAt(x + margin) == 0 else self.columnAt(x - margin)
                 else:
                     return None
 
-            # Return the index of the row this y position is on the top edge of
             elif self.orientation == Qt.Vertical:
                 y = mouse_position
                 if self.rowAt(y - margin) != self.rowAt(y + margin):
-                    if self.rowAt(y + margin) == 0:
-                        # We're at the top edge of the first row
-                        return None
-                    else:
-                        return self.rowAt(y - margin)
+                    return None if self.rowAt(y + margin) == 0 else self.rowAt(y - margin)
                 else:
                     return None
 
@@ -889,7 +851,7 @@ class HeaderView(QtWidgets.QTableView):
                 return True
             # Disabling vertical resizing of top header for now
             elif over_header_edge(orthogonal_mouse_position) \
-                    and self.orientation == Qt.Vertical:
+                        and self.orientation == Qt.Vertical:
                 self.header_being_resized = True
                 return True
             else:
@@ -901,15 +863,16 @@ class HeaderView(QtWidgets.QTableView):
             self.header_being_resized = False
 
         # Auto size the column that was double clicked
-        if event.type() == QtCore.QEvent.MouseButtonDblClick:
-            # Find which column or row edge the mouse was over and auto size it
-            if over_header_cell_edge(mouse_position) is not None:
-                header_index = over_header_cell_edge(mouse_position)
-                if self.orientation == Qt.Horizontal:
-                    self.dataframe_viewer.auto_size_column(header_index)
-                elif self.orientation == Qt.Vertical:
-                    self.dataframe_viewer.auto_size_row(header_index)
-                return True
+        if (
+            event.type() == QtCore.QEvent.MouseButtonDblClick
+            and over_header_cell_edge(mouse_position) is not None
+        ):
+            header_index = over_header_cell_edge(mouse_position)
+            if self.orientation == Qt.Horizontal:
+                self.dataframe_viewer.auto_size_column(header_index)
+            elif self.orientation == Qt.Vertical:
+                self.dataframe_viewer.auto_size_row(header_index)
+            return True
 
         # Handle drag resizing
         if event.type() == QtCore.QEvent.MouseMove:
@@ -994,7 +957,7 @@ class HeaderNamesModel(QtCore.QAbstractTableModel):
         row = index.row()
         col = index.column()
 
-        if role == QtCore.Qt.DisplayRole or role == QtCore.Qt.ToolTipRole:
+        if role in [QtCore.Qt.DisplayRole, QtCore.Qt.ToolTipRole]:
 
             if self.orientation == Qt.Horizontal:
                 val = self.pgdf.df.columns.names[row]
@@ -1085,13 +1048,12 @@ class HeaderNamesView(QtWidgets.QTableView):
         return self.dataframe_viewer.columnHeader.rowHeight(row)
 
     def columnWidth(self, column: int) -> int:
-        if self.orientation == Qt.Horizontal:
-            if all(name is None for name in self.pgdf.df.columns.names):
-                return 0
-            else:
-                return super().columnWidth(column)
-        else:
+        if self.orientation != Qt.Horizontal:
             return self.dataframe_viewer.indexHeader.columnWidth(column)
+        if all(name is None for name in self.pgdf.df.columns.names):
+            return 0
+        else:
+            return super().columnWidth(column)
 
 
 # This is a fixed size widget with a size that tracks some other widget
@@ -1102,13 +1064,8 @@ class TrackingSpacer(QtWidgets.QFrame):
         self.ref_y = ref_y
 
     def minimumSizeHint(self):
-        width = 0
-        height = 0
-        if self.ref_x:
-            width = self.ref_x.width()
-        if self.ref_y:
-            height = self.ref_y.height()
-
+        width = self.ref_x.width() if self.ref_x else 0
+        height = self.ref_y.height() if self.ref_y else 0
         return QtCore.QSize(width, height)
 
 

@@ -71,15 +71,11 @@ class Setting(DictLike):
         self.persist: bool = persist
 
     def __setattr__(self, key, value):
-        try:
+        with contextlib.suppress(AttributeError):
             if self.persist:
                 settings = read_saved_settings()
                 settings[self.label] = value
                 write_saved_settings(settings)
-        except AttributeError:
-            # Get attribute error because of __setattr__ happening in __init__ before self.persist is set
-            pass
-
         super().__setattr__(key, value)
 
 
@@ -121,13 +117,7 @@ class SettingsStore(DictLike, QtCore.QObject):
                 else:
                     settings[setting_name] = DEFAULT_SETTINGS[setting_name]
 
-        if in_interactive_console():
-            # Don't block if in an interactive console (so you can view GUI and still continue running commands)
-            settings['block'] = False
-        else:
-            # If in a script, block or else the script will continue and finish without allowing GUI interaction
-            settings['block'] = True
-
+        settings['block'] = not in_interactive_console()
         self.block = Setting(label="block",
                              value=settings['block'],
                              description="Should GUI block code execution until closed?",
@@ -238,7 +228,7 @@ def status_message_decorator(message):
                     full_kwargs[arg_name] = args[ix]
             new_message = message
 
-            for arg_name in full_kwargs.keys():
+            for arg_name in full_kwargs:
                 new_message = new_message.replace('{' + arg_name + '}', str(full_kwargs[arg_name]))
 
             if self.gui is not None:
@@ -362,7 +352,9 @@ class PandasGuiDataFrameStore(PandasGuiStoreItem):
     @status_message_decorator("Generating code export...")
     def code_export(self):
 
-        if len(self.history) == 0 and not any([filt.enabled for filt in self.filters]):
+        if len(self.history) == 0 and not any(
+            filt.enabled for filt in self.filters
+        ):
             return f"# No actions have been recorded yet on this DataFrame ({self.name})"
 
         code_history = "# 'df' refers to the DataFrame passed into 'pandasgui.show'\n\n"
@@ -375,7 +367,7 @@ class PandasGuiDataFrameStore(PandasGuiStoreItem):
             code_history += history_item.code
             code_history += "\n\n"
 
-        if any([filt.enabled for filt in self.filters]):
+        if any(filt.enabled for filt in self.filters):
             code_history += f"# Filters\n"
         for filt in self.filters:
             if filt.enabled:
@@ -498,11 +490,9 @@ class PandasGuiDataFrameStore(PandasGuiStoreItem):
             # Clicked an unsorted column
             if ix != self.sorted_column_ix:
                 next_sort_state = 'Asc'
-            # Clicked a sorted column
-            elif ix == self.sorted_column_ix and self.sort_state == 'Asc':
+            elif self.sort_state == 'Asc':
                 next_sort_state = 'Desc'
-            # Clicked a reverse sorted column - reset to sorted by index
-            elif ix == self.sorted_column_ix:
+            else:
                 next_sort_state = 'None'
 
         if next_sort_state == 'Asc':
@@ -543,8 +533,7 @@ class PandasGuiDataFrameStore(PandasGuiStoreItem):
             self.add_history_item("sort_index",
                                   f"df = df.sort_index(level={ix}, ascending=True, kind='mergesort')")
 
-        # Clicked a sorted index level
-        elif ix == self.sorted_index_level and self.sort_state == 'Asc':
+        elif self.sort_state == 'Asc':
             self.df_unfiltered = self.df_unfiltered.sort_index(level=ix, ascending=False, kind='mergesort')
             self.sorted_index_level = ix
             self.sort_state = 'Desc'
@@ -552,8 +541,7 @@ class PandasGuiDataFrameStore(PandasGuiStoreItem):
             self.add_history_item("sort_index",
                                   f"df = df.sort_index(level={ix}, ascending=False, kind='mergesort')")
 
-        # Clicked a reverse sorted index level - reset to sorted by full index
-        elif ix == self.sorted_index_level:
+        else:
             self.df_unfiltered = self.df_unfiltered.sort_index(ascending=True, kind='mergesort')
 
             self.sorted_index_level = None
@@ -864,12 +852,15 @@ class PandasGuiStore:
         elif type(names) == int:
             return self.data.items()[names]
 
-        df_dict = {}
-        for pgdf in [item for item in self.data.values() if isinstance(item, PandasGuiDataFrameStore)]:
-            if names is None or pgdf.name in names:
-                df_dict[pgdf.name] = pgdf.df
-
-        return df_dict
+        return {
+            pgdf.name: pgdf.df
+            for pgdf in [
+                item
+                for item in self.data.values()
+                if isinstance(item, PandasGuiDataFrameStore)
+            ]
+            if names is None or pgdf.name in names
+        }
 
     def select_pgdf(self, name):
         pgdf = self.data[name]

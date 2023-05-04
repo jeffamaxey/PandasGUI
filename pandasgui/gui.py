@@ -290,10 +290,7 @@ class PandasGui(QtWidgets.QMainWindow):
         if e.mimeData().hasUrls:
             e.setDropAction(QtCore.Qt.CopyAction)
             e.accept()
-            fpath_list = []
-            for url in e.mimeData().urls():
-                fpath_list.append(str(url.toLocalFile()))
-
+            fpath_list = [str(url.toLocalFile()) for url in e.mimeData().urls()]
             for fpath in fpath_list:
                 self.store.import_file(fpath)
         else:
@@ -371,7 +368,7 @@ class PandasGui(QtWidgets.QMainWindow):
         import winreg
 
         key = winreg.HKEY_CURRENT_USER
-        command_value = rf'cmd.exe /k jupyter lab --notebook-dir="%V"'
+        command_value = 'cmd.exe /k jupyter lab --notebook-dir="%V"'
         icon_value = fr"{os.path.dirname(pandasgui.__file__)}\resources\images\jupyter_icon.ico"
 
         handle = winreg.CreateKeyEx(key, "Software\Classes\directory\Background\shell\Open with JupyterLab\command", 0,
@@ -402,8 +399,11 @@ class PandasGui(QtWidgets.QMainWindow):
         layout = QtWidgets.QVBoxLayout()
         dialog.setLayout(layout)
         layout.addWidget(QtWidgets.QLabel(f"Version: {pandasgui.__version__}"))
-        layout.addWidget(QtWidgets.QLabel(
-            f'''GitHub: <a style="color: #1e81cc;" href="https://github.com/adamerose/PandasGUI">https://github.com/adamerose/PandasGUI</a>'''))
+        layout.addWidget(
+            QtWidgets.QLabel(
+                '''GitHub: <a style="color: #1e81cc;" href="https://github.com/adamerose/PandasGUI">https://github.com/adamerose/PandasGUI</a>'''
+            )
+        )
         # dialog.resize(500, 500)
         dialog.setWindowTitle("About")
         dialog.show()
@@ -422,7 +422,7 @@ class PandasGui(QtWidgets.QMainWindow):
         callers_local_vars = self.caller_stack.f_locals.items()
         refreshed_names = []
         for var_name, var_val in callers_local_vars:
-            for ix, name in enumerate([pgdf.name for pgdf in self.store.data.values()]):
+            for name in [pgdf.name for pgdf in self.store.data.values()]:
                 if var_name == name:
                     none_found_flag = False
                     self.store.remove_dataframe(var_name)
@@ -464,11 +464,11 @@ def show(*args,
             untitled_number += 1
         items[name] = item
 
-    dupes = [key for key in items.keys() if key in kwargs.keys()]
+    dupes = [key for key in items if key in kwargs]
     if any(dupes):
         logger.warning("Duplicate names were provided, duplicates were ignored.")
 
-    kwargs = {**kwargs, **items}
+    kwargs = kwargs | items
 
     pandas_gui = PandasGui(settings=settings, **kwargs)
     pandas_gui.caller_stack = inspect.currentframe().f_back
@@ -482,9 +482,10 @@ def show(*args,
 
     except Exception as e:
         # Let this silently fail if no IPython console exists
-        if e.args[0] == 'Decorator can only run in context where `get_ipython` exists':
-            pass
-        else:
+        if (
+            e.args[0]
+            != 'Decorator can only run in context where `get_ipython` exists'
+        ):
             raise e
 
     return pandas_gui
